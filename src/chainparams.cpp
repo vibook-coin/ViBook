@@ -116,6 +116,7 @@ public:
         nMaturity = 15;
         nMasternodeCountDrift = 20;
         nMaxMoneyOut = 5000000 * COIN;
+        strDeveloperFeePayee = "VPVJddq66YKY4Sogh7YmxMkaz6NJJnsSAp"; // premine wallet
 
         nLastPOWBlock = 100;
         nModifierUpdateBlock = 999999999;
@@ -226,6 +227,8 @@ public:
         nMasternodeCountDrift = 4;
         nModifierUpdateBlock = 999999999;
         nMaxMoneyOut = 5000000 * COIN;
+        strDeveloperFeePayee = "---";
+
         nZerocoinStartHeight = 200;
         nZerocoinStartTime = 1549152003; 
         nBlockEnforceSerialRange = 1;       //Enforce serial range starting this block
@@ -294,6 +297,8 @@ public:
         nRejectBlockOutdatedMajority = 950;
         nToCheckBlockUpgradeMajority = 1000;
         nMinerThreads = 1;
+        strDeveloperFeePayee = "---";
+
         nTargetTimespan = 24 * 60 * 60; // VIBOOK: 1 day
         nTargetSpacing = 1 * 60;        // VIBOOK:: 1 minutes
         bnProofOfWorkLimit = ~uint256(0) >> 1;
@@ -331,6 +336,8 @@ public:
         networkID = CBaseChainParams::UNITTEST;
         strNetworkID = "unittest";
         nDefaultPort = 22268;
+        strDeveloperFeePayee = "---";
+
         vFixedSeeds.clear(); //! Unit test mode doesn't have any fixed seeds.
         vSeeds.clear();      //! Unit test mode doesn't have any DNS seeds.
 

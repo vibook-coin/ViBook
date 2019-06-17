@@ -97,7 +97,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
         {"mnbudget", 3},
         {"mnbudget", 4},
         {"mnbudget", 6},
-        {"mnbudget", 8},
+//        {"mnbudget", 8},
         {"preparebudget", 2},
         {"preparebudget", 3},
         {"preparebudget", 5},

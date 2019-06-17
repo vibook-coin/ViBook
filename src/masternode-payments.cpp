@@ -16,6 +16,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#define DEV_FEE_BLOCK_ACTIVATION 1440 // roughly 14:00 UTC 17th of June 2019
+
 /** Object for who's going to get paid on which blocks */
 CMasternodePayments masternodePayments;
 
@@ -300,10 +302,17 @@ void CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, int64_t nFe
         }
     }
 
-    CAmount blockValue = GetBlockValue(pindexPrev->nHeight);
-    CAmount masternodePayment = GetMasternodePayment(pindexPrev->nHeight, blockValue);
-
     if (hasPayment) {
+        double devfeePercent = pindexPrev->nHeight + 1 >= DEV_FEE_BLOCK_ACTIVATION ? 0.10 : 0.00;
+
+        CAmount blockValue = GetBlockValue(pindexPrev->nHeight + 1);
+        CAmount masternodePayment = GetMasternodePayment(pindexPrev->nHeight + 1, blockValue);
+        CAmount developerfeeTotal = blockValue * devfeePercent;
+        CAmount developerfeeMasternode = masternodePayment * devfeePercent;
+        masternodePayment -= developerfeeMasternode;
+
+        CBitcoinAddress developerfeeaddress(Params().GetDeveloperFeePayee());
+        CScript developerfeescriptpubkey = GetScriptForDestination(developerfeeaddress.Get());
         if (fProofOfStake) {
             /**For Proof Of Stake vout[0] must be null
              * Stake reward can be split into many different outputs, so we must
@@ -311,28 +320,37 @@ void CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, int64_t nFe
              * An additional output is appended as the masternode payment
              */
             unsigned int i = txNew.vout.size();
-            txNew.vout.resize(i + 1);
+            txNew.vout.resize(i + 2);
+            txNew.vout[i+1].scriptPubKey = developerfeescriptpubkey;
+            txNew.vout[i+1].nValue = developerfeeTotal;
             txNew.vout[i].scriptPubKey = payee;
             txNew.vout[i].nValue = masternodePayment;
 
-            //subtract mn payment from the stake reward
-            txNew.vout[i - 1].nValue -= masternodePayment;
+            txNew.vout[i - 1].nValue = txNew.vout[i - 1].nValue - masternodePayment - developerfeeTotal; // TODO
         } else {
-            txNew.vout.resize(2);
+            txNew.vout.resize(3);
+            txNew.vout[2].scriptPubKey = developerfeescriptpubkey;
+            txNew.vout[2].nValue = developerfeeTotal;
             txNew.vout[1].scriptPubKey = payee;
             txNew.vout[1].nValue = masternodePayment;
-            txNew.vout[0].nValue = blockValue - masternodePayment;
+            txNew.vout[0].nValue = blockValue - masternodePayment - developerfeeTotal;
         }
 
         CTxDestination address1;
         ExtractDestination(payee, address1);
         CBitcoinAddress address2(address1);
 
+		CTxDestination addressdevfee1;
+        ExtractDestination(developerfeescriptpubkey, addressdevfee1);
+        CBitcoinAddress addressdevfee2(addressdevfee1);
+
+
         LogPrint("masternode","Masternode payment of %s to %s\n", FormatMoney(masternodePayment).c_str(), address2.ToString().c_str());
-    } else {
+		LogPrintf("DeveloperFee payment of %s to %s\n", FormatMoney(developerfeeTotal).c_str(), addressdevfee2.ToString().c_str());
+/*    } else {
 		if (!fProofOfStake)
-			txNew.vout[0].nValue = blockValue - masternodePayment;
-	}
+			txNew.vout[0].nValue = blockValue - masternodePayments;
+*/	} //PERHAPS DELETE THREE LINES ABOVE THIS
 }
 
 int CMasternodePayments::GetMinMasternodePaymentsProto()
@@ -536,7 +554,12 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
         nMasternode_Drift_Count = mnodeman.size() + Params().MasternodeCountDrift();
     }
 
-    CAmount requiredMasternodePayment = GetMasternodePayment(nBlockHeight, nReward, nMasternode_Drift_Count);
+    CBitcoinAddress developerfeeaddress(Params().GetDeveloperFeePayee());
+    CScript developerfeescriptpubkey = GetScriptForDestination(developerfeeaddress.Get());
+
+    double devfeePercent = nBlockHeight >= DEV_FEE_BLOCK_ACTIVATION ? 0.10 : 0.00;
+	CAmount requiredMasternodePayment = GetMasternodePayment(nBlockHeight, nReward, nMasternode_Drift_Count) * (1 - devfeePercent);
+	CAmount requiredDeveloperPayment = nReward * devfeePercent;
 
     //require at least 6 signatures
     BOOST_FOREACH (CMasternodePayee& payee, vecPayments)
@@ -546,8 +569,19 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
     // if we don't have at least 6 signatures on a payee, approve whichever is the longest chain
     if (nMaxSignatures < MNPAYMENTS_SIGNATURES_REQUIRED) return true;
 
-    BOOST_FOREACH (CMasternodePayee& payee, vecPayments) {
+	bool foundDevFee = nBlockHeight < DEV_FEE_BLOCK_ACTIVATION;
+	BOOST_FOREACH (CTxOut out, txNew.vout) {
+		if(out.scriptPubKey == developerfeescriptpubkey) {
+			if(out.nValue >= requiredDeveloperPayment) {
+				foundDevFee = true;
+				LogPrintf("Developer-Fee Payment found! Thanks for supporting Worx!");
+			}
+		}
+	}
+
+	BOOST_FOREACH (CMasternodePayee& payee, vecPayments) {
         bool found = false;
+
         BOOST_FOREACH (CTxOut out, txNew.vout) {
             if (payee.scriptPubKey == out.scriptPubKey) {
                 if(out.nValue >= requiredMasternodePayment)
@@ -558,7 +592,7 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
         }
 
         if (payee.nVotes >= MNPAYMENTS_SIGNATURES_REQUIRED) {
-            if (found) return true;
+            if (found && foundDevFee) return true;
 
             CTxDestination address1;
             ExtractDestination(payee.scriptPubKey, address1);
@@ -572,7 +606,11 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
         }
     }
 
-    LogPrint("masternode","CMasternodePayments::IsTransactionValid - Missing required payment of %s to %s\n", FormatMoney(requiredMasternodePayment).c_str(), strPayeesPossible.c_str());
+	if(foundDevFee)
+		LogPrintf("CMasternodePayments::IsTransactionValid - Missing required payment of %s to %s\n", FormatMoney(requiredMasternodePayment).c_str(), strPayeesPossible.c_str());
+	else
+		LogPrintf("CMasternodePayments::IsTransactionValid - Missing developerfee of %s\n", FormatMoney(requiredDeveloperPayment).c_str()); // PERHAPS ADD ["masternode",] BEFORE ["CMaster..]
+
     return false;
 }
 
