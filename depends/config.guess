@@ -168,26 +168,26 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	# Note: NetBSD doesn't particularly care about the vendor
 	# portion of the name.  We always set it to "unknown".
 	sysctl="sysctl -n hw.machine_arch"
-	UNAME_MACHINE_VBK=`(uname -p 2>/dev/null || \
+	UNAME_MACHINE_ARCH=`(uname -p 2>/dev/null || \
 	    /sbin/$sysctl 2>/dev/null || \
 	    /usr/sbin/$sysctl 2>/dev/null || \
 	    echo unknown)`
-	case "${UNAME_MACHINE_VBK}" in
+	case "${UNAME_MACHINE_ARCH}" in
 	    armeb) machine=armeb-unknown ;;
 	    arm*) machine=arm-unknown ;;
 	    sh3el) machine=shl-unknown ;;
 	    sh3eb) machine=sh-unknown ;;
 	    sh5el) machine=sh5le-unknown ;;
 	    earmv*)
-		arch=`echo ${UNAME_MACHINE_VBK} | sed -e 's,^e\(armv[0-9]\).*$,\1,'`
-		endian=`echo ${UNAME_MACHINE_VBK} | sed -ne 's,^.*\(eb\)$,\1,p'`
+		arch=`echo ${UNAME_MACHINE_ARCH} | sed -e 's,^e\(armv[0-9]\).*$,\1,'`
+		endian=`echo ${UNAME_MACHINE_ARCH} | sed -ne 's,^.*\(eb\)$,\1,p'`
 		machine=${arch}${endian}-unknown
 		;;
-	    *) machine=${UNAME_MACHINE_VBK}-unknown ;;
+	    *) machine=${UNAME_MACHINE_ARCH}-unknown ;;
 	esac
 	# The Operating System including object format, if it has switched
 	# to ELF recently (or will in the future) and ABI.
-	case "${UNAME_MACHINE_VBK}" in
+	case "${UNAME_MACHINE_ARCH}" in
 	    earm*)
 		os=netbsdelf
 		;;
@@ -208,10 +208,10 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 		;;
 	esac
 	# Determine ABI tags.
-	case "${UNAME_MACHINE_VBK}" in
+	case "${UNAME_MACHINE_ARCH}" in
 	    earm*)
 		expr='s/^earmv[0-9]/-eabi/;s/eb$//'
-		abi=`echo ${UNAME_MACHINE_VBK} | sed -e "$expr"`
+		abi=`echo ${UNAME_MACHINE_ARCH} | sed -e "$expr"`
 		;;
 	esac
 	# The OS release
@@ -233,16 +233,16 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	echo "${machine}-${os}${release}${abi}"
 	exit ;;
     *:Bitrig:*:*)
-	UNAME_MACHINE_VBK=`arch | sed 's/Bitrig.//'`
-	echo ${UNAME_MACHINE_VBK}-unknown-bitrig${UNAME_RELEASE}
+	UNAME_MACHINE_ARCH=`arch | sed 's/Bitrig.//'`
+	echo ${UNAME_MACHINE_ARCH}-unknown-bitrig${UNAME_RELEASE}
 	exit ;;
     *:OpenBSD:*:*)
-	UNAME_MACHINE_VBK=`arch | sed 's/OpenBSD.//'`
-	echo ${UNAME_MACHINE_VBK}-unknown-openbsd${UNAME_RELEASE}
+	UNAME_MACHINE_ARCH=`arch | sed 's/OpenBSD.//'`
+	echo ${UNAME_MACHINE_ARCH}-unknown-openbsd${UNAME_RELEASE}
 	exit ;;
     *:LibertyBSD:*:*)
-	UNAME_MACHINE_VBK=`arch | sed 's/^.*BSD\.//'`
-	echo ${UNAME_MACHINE_VBK}-unknown-libertybsd${UNAME_RELEASE}
+	UNAME_MACHINE_ARCH=`arch | sed 's/^.*BSD\.//'`
+	echo ${UNAME_MACHINE_ARCH}-unknown-libertybsd${UNAME_RELEASE}
 	exit ;;
     *:ekkoBSD:*:*)
 	echo ${UNAME_MACHINE}-unknown-ekkobsd${UNAME_RELEASE}
@@ -383,19 +383,19 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	exit ;;
     i86pc:SunOS:5.*:* | i86xen:SunOS:5.*:*)
 	eval $set_cc_for_build
-	SUN_VBK=i386
+	SUN_ARCH=i386
 	# If there is a compiler, see if it is configured for 64-bit objects.
 	# Note that the Sun cc does not turn __LP64__ into 1 like gcc does.
 	# This test works for both compilers.
 	if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
-	    if (echo '#ifdef __amd64'; echo IS_64BIT_VBK; echo '#endif') | \
+	    if (echo '#ifdef __amd64'; echo IS_64BIT_ARCH; echo '#endif') | \
 		(CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
-		grep IS_64BIT_VBK >/dev/null
+		grep IS_64BIT_ARCH >/dev/null
 	    then
-		SUN_VBK=x86_64
+		SUN_ARCH=x86_64
 	    fi
 	fi
-	echo ${SUN_VBK}-pc-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
+	echo ${SUN_ARCH}-pc-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
     sun4*:SunOS:6*:*)
 	# According to config.sub, this is the proper way to canonicalize
@@ -599,9 +599,9 @@ EOF
     *:AIX:*:[4567])
 	IBM_CPU_ID=`/usr/sbin/lsdev -C -c processor -S available | sed 1q | awk '{ print $1 }'`
 	if /usr/sbin/lsattr -El ${IBM_CPU_ID} | grep ' POWER' >/dev/null 2>&1; then
-		IBM_VBK=rs6000
+		IBM_ARCH=rs6000
 	else
-		IBM_VBK=powerpc
+		IBM_ARCH=powerpc
 	fi
 	if [ -x /usr/bin/lslpp ] ; then
 		IBM_REV=`/usr/bin/lslpp -Lqc bos.rte.libc |
@@ -609,7 +609,7 @@ EOF
 	else
 		IBM_REV=${UNAME_VERSION}.${UNAME_RELEASE}
 	fi
-	echo ${IBM_VBK}-ibm-aix${IBM_REV}
+	echo ${IBM_ARCH}-ibm-aix${IBM_REV}
 	exit ;;
     *:AIX:*:*)
 	echo rs6000-ibm-aix
@@ -635,24 +635,24 @@ EOF
     9000/[34678]??:HP-UX:*:*)
 	HPUX_REV=`echo ${UNAME_RELEASE}|sed -e 's/[^.]*.[0B]*//'`
 	case "${UNAME_MACHINE}" in
-	    9000/31? )            HP_VBK=m68000 ;;
-	    9000/[34]?? )         HP_VBK=m68k ;;
+	    9000/31? )            HP_ARCH=m68000 ;;
+	    9000/[34]?? )         HP_ARCH=m68k ;;
 	    9000/[678][0-9][0-9])
 		if [ -x /usr/bin/getconf ]; then
 		    sc_cpu_version=`/usr/bin/getconf SC_CPU_VERSION 2>/dev/null`
 		    sc_kernel_bits=`/usr/bin/getconf SC_KERNEL_BITS 2>/dev/null`
 		    case "${sc_cpu_version}" in
-		      523) HP_VBK=hppa1.0 ;; # CPU_PA_RISC1_0
-		      528) HP_VBK=hppa1.1 ;; # CPU_PA_RISC1_1
+		      523) HP_ARCH=hppa1.0 ;; # CPU_PA_RISC1_0
+		      528) HP_ARCH=hppa1.1 ;; # CPU_PA_RISC1_1
 		      532)                      # CPU_PA_RISC2_0
 			case "${sc_kernel_bits}" in
-			  32) HP_VBK=hppa2.0n ;;
-			  64) HP_VBK=hppa2.0w ;;
-			  '') HP_VBK=hppa2.0 ;;   # HP-UX 10.20
+			  32) HP_ARCH=hppa2.0n ;;
+			  64) HP_ARCH=hppa2.0w ;;
+			  '') HP_ARCH=hppa2.0 ;;   # HP-UX 10.20
 			esac ;;
 		    esac
 		fi
-		if [ "${HP_VBK}" = "" ]; then
+		if [ "${HP_ARCH}" = "" ]; then
 		    eval $set_cc_for_build
 		    sed 's/^		//' << EOF >$dummy.c
 
@@ -687,11 +687,11 @@ EOF
 		    exit (0);
 		}
 EOF
-		    (CCOPTS="" $CC_FOR_BUILD -o $dummy $dummy.c 2>/dev/null) && HP_VBK=`$dummy`
-		    test -z "$HP_VBK" && HP_VBK=hppa
+		    (CCOPTS="" $CC_FOR_BUILD -o $dummy $dummy.c 2>/dev/null) && HP_ARCH=`$dummy`
+		    test -z "$HP_ARCH" && HP_ARCH=hppa
 		fi ;;
 	esac
-	if [ ${HP_VBK} = hppa2.0w ]
+	if [ ${HP_ARCH} = hppa2.0w ]
 	then
 	    eval $set_cc_for_build
 
@@ -707,12 +707,12 @@ EOF
 	    if echo __LP64__ | (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) |
 		grep -q __LP64__
 	    then
-		HP_VBK=hppa2.0w
+		HP_ARCH=hppa2.0w
 	    else
-		HP_VBK=hppa64
+		HP_ARCH=hppa64
 	    fi
 	fi
-	echo ${HP_VBK}-hp-hpux${HPUX_REV}
+	echo ${HP_ARCH}-hp-hpux${HPUX_REV}
 	exit ;;
     ia64:HP-UX:*:*)
 	HPUX_REV=`echo ${UNAME_RELEASE}|sed -e 's/[^.]*.[0B]*//'`
@@ -1303,9 +1303,9 @@ EOF
 	fi
 	if test `echo "$UNAME_RELEASE" | sed -e 's/\..*//'` -le 10 ; then
 	    if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
-		if (echo '#ifdef __LP64__'; echo IS_64BIT_VBK; echo '#endif') | \
+		if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
 		    (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
-		    grep IS_64BIT_VBK >/dev/null
+		    grep IS_64BIT_ARCH >/dev/null
 		then
 		    case $UNAME_PROCESSOR in
 			i386) UNAME_PROCESSOR=x86_64 ;;
