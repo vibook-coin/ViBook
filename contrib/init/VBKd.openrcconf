@@ -1,0 +1,26 @@
+# /etc/conf.d/VBKd: config file for /etc/init.d/VBKd
+
+# Config file location
+#BITCOIND_CONFIGFILE="/etc/VBK/VBK.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOIND_USER)
+#BITCOIND_PIDDIR="/var/run/VBKd"
+
+# What filename to give the pidfile
+#BITCOIND_PIDFILE="${BITCOIND_PIDDIR}/VBKd.pid"
+
+# Where to write VBKd data (be mindful that the blockchain is large)
+#BITCOIND_DATADIR="/var/lib/VBKd"
+
+# User and group to own VBKd process
+#BITCOIND_USER="VBK"
+#BITCOIND_GROUP="VBK"
+
+# Path to VBKd executable
+#BITCOIND_BIN="/usr/bin/VBKd"
+
+# Nice value to run VBKd under
+#BITCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+BITCOIND_OPTS=""

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=VBK
+Comment=VBK P2P Cryptocurrency
+Comment[fr]=VBK, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=VBK, eşten eşe kriptografik sanal para birimi
+Exec=VBK-qt %u
+Terminal=false
+Type=Application
+Icon=VBK128
+MimeType=x-scheme-handler/VBK;
+Categories=Office;Finance;

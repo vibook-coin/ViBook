@@ -1,0 +1,26 @@
+[Unit]
+Description=VBK's distributed currency daemon
+After=network.target
+
+[Service]
+User=VBK
+Group=VBK
+
+Type=forking
+PIDFile=/var/lib/VBKd/VBKd.pid
+
+ExecStart=/usr/bin/VBKd -daemon -pid=/var/lib/VBKd/VBKd.pid \
+          -conf=/etc/VBK/VBK.conf -datadir=/var/lib/VBKd
+
+ExecStop=-/usr/bin/VBK-cli -conf=/etc/VBK/VBK.conf \
+         -datadir=/var/lib/VBKd stop
+
+Restart=always
+PrivateTmp=true
+TimeoutStopSec=60s
+TimeoutStartSec=2s
+StartLimitInterval=120s
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target
